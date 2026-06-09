@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,13 +13,19 @@ import (
 
 	"github.com/example/go-payment/internal/transfer"
 	"github.com/go-chi/chi/v5"
+	"github.com/joho/godotenv" // Add this import
 	_ "github.com/lib/pq"
 )
 
 func main() {
+	// Load .env file if it exists (for local development)
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using system environment variables")
+	}
+
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		dsn = "postgres://postgres:postgres@localhost:5432/payment?sslmode=disable"
+		log.Fatal("DATABASE_URL environment variable is required")
 	}
 
 	db, err := sql.Open("postgres", dsn)
@@ -32,11 +39,12 @@ func main() {
 	if err := db.PingContext(ctx); err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
+	log.Println("Database connected successfully")
 
 	// Initialize authentication client
 	loginServiceURL := os.Getenv("NODE_LOGIN_SERVICE_URL")
 	if loginServiceURL == "" {
-		loginServiceURL = "https://backend-course-gamma.vercel.app"
+		log.Fatal("NODE_LOGIN_SERVICE_URL environment variable is required")
 	}
 
 	cacheTTLStr := os.Getenv("AUTH_CACHE_TTL")
@@ -59,7 +67,13 @@ func main() {
 	// Health endpoint - public (no authentication required)
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
+		// w.Write([]byte("ok"))
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"statusCode": "200",
+			"message":    "Healthy",
+			"timestamp":  time.Now().Format(time.RFC3339),
+		})
 	})
 
 	// Protected endpoints with authentication middleware
