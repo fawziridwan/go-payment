@@ -1,0 +1,1296 @@
+{
+	"info": {
+		"_postman_id": "banking-txn-api-v1",
+		"name": "Banking Transaction API v1",
+		"description": "Complete Postman collection for the Banking Transaction API.\n\n## Authentication\n- **JWT Token**: Set the `jwt_token` variable after login\n- **API Key**: Pre-configured as `dev-api-key` for development\n\n## Setup\n1. Start the server: `go run ./cmd/payment`\n2. Get a JWT token from your login service\n3. Set the `jwt_token` collection variable\n4. Run \"Add Account\" first to create test accounts\n5. Use the returned `accountId` for other endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "<your_jwt_token_here>",
+			"type": "string"
+		},
+		{
+			"key": "api_key",
+			"value": "dev-api-key",
+			"type": "string"
+		},
+		{
+			"key": "source_account_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "destination_account_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "transaction_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health Check (v1)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/v1/health",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "health"]
+						},
+						"description": "Public health check endpoint. No authentication required.\n\nExpected response:\n```json\n{\"success\": true, \"data\": {\"status\": \"UP\"}}\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "Health Check (Legacy)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": ["{{base_url}}"],
+							"path": ["health"]
+						},
+						"description": "Legacy health check endpoint."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Account Management",
+			"item": [
+				{
+					"name": "Add Account (Source)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data && jsonData.data.accountId) {",
+									"    pm.collectionVariables.set('source_account_id', jsonData.data.accountId);",
+									"    console.log('Source Account ID saved: ' + jsonData.data.accountId);",
+									"}",
+									"",
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has accountId', function () {",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data.accountId).to.not.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"accountNumber\": \"1234567890\",\n    \"accountName\": \"John Doe\",\n    \"bankCode\": \"BCA\",\n    \"currency\": \"IDR\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/accounts",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "accounts"]
+						},
+						"description": "Register a new bank account.\n\n**Auto-saves** the returned `accountId` to the `source_account_id` collection variable.\n\nAll fields are required:\n- `accountNumber` - Unique account number\n- `accountName` - Account holder name\n- `bankCode` - Bank identifier (e.g. BCA, BNI, BRI)\n- `currency` - Currency code (defaults to IDR)"
+					},
+					"response": []
+				},
+				{
+					"name": "Add Account (Destination)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.data && jsonData.data.accountId) {",
+									"    pm.collectionVariables.set('destination_account_id', jsonData.data.accountId);",
+									"    console.log('Destination Account ID saved: ' + jsonData.data.accountId);",
+									"}",
+									"",
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has accountId', function () {",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data.accountId).to.not.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"accountNumber\": \"9876543210\",\n    \"accountName\": \"Jane Smith\",\n    \"bankCode\": \"BCA\",\n    \"currency\": \"IDR\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/accounts",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "accounts"]
+						},
+						"description": "Register a destination bank account for transfer testing.\n\n**Auto-saves** the returned `accountId` to the `destination_account_id` collection variable."
+					},
+					"response": []
+				},
+				{
+					"name": "Add Account (Duplicate - Should Fail)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 409 (Conflict)', function () {",
+									"    pm.response.to.have.status(409);",
+									"});",
+									"",
+									"pm.test('Error code is ACCOUNT_ALREADY_EXISTS', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.false;",
+									"    pm.expect(jsonData.errorCode).to.eql('ACCOUNT_ALREADY_EXISTS');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"accountNumber\": \"1234567890\",\n    \"accountName\": \"Duplicate Account\",\n    \"bankCode\": \"BCA\",\n    \"currency\": \"IDR\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/accounts",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "accounts"]
+						},
+						"description": "Test duplicate account number validation. Should return 409 Conflict."
+					},
+					"response": []
+				},
+				{
+					"name": "Add Account (Missing Fields - Should Fail)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Error code is INVALID_REQUEST', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.false;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"accountNumber\": \"5555555555\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/accounts",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "accounts"]
+						},
+						"description": "Test missing required fields validation. Should return 400 Bad Request."
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Account",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Account removed successfully', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.message).to.eql('Account removed successfully');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/accounts/{{source_account_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "accounts", "{{source_account_id}}"]
+						},
+						"description": "Soft delete an account. The account will be marked as DELETED and cannot be used for further transactions.\n\n⚠️ **Warning**: Run this after testing Transfer and Balance, as the source account will no longer be usable."
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Account (Not Found - Should Fail)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/accounts/00000000-0000-0000-0000-000000000000",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "accounts", "00000000-0000-0000-0000-000000000000"]
+						},
+						"description": "Test removing a non-existent account. Should return 404."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Balance Service",
+			"item": [
+				{
+					"name": "Check Balance",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has balance data', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.have.property('accountId');",
+									"    pm.expect(jsonData.data).to.have.property('availableBalance');",
+									"    pm.expect(jsonData.data).to.have.property('ledgerBalance');",
+									"    pm.expect(jsonData.data).to.have.property('currency');",
+									"    pm.expect(jsonData.data).to.have.property('lastUpdated');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/accounts/{{source_account_id}}/balance",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "accounts", "{{source_account_id}}", "balance"]
+						},
+						"description": "Retrieve real-time balance for an account.\n\nReturns:\n- `availableBalance` - Available balance for transactions\n- `ledgerBalance` - Ledger (book) balance\n- `currency` - Account currency\n- `lastUpdated` - Last balance update timestamp"
+					},
+					"response": []
+				},
+				{
+					"name": "Check Balance (Not Found - Should Fail)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/accounts/00000000-0000-0000-0000-000000000000/balance",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "accounts", "00000000-0000-0000-0000-000000000000", "balance"]
+						},
+						"description": "Test balance check for non-existent account. Should return 404."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Transfer Service",
+			"item": [
+				{
+					"name": "Transfer Funds",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Generate a unique Idempotency-Key for each request",
+									"pm.variables.set('idempotency_key', pm.variables.replaceIn('{{$guid}}'));"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Transfer successful', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.have.property('transactionId');",
+									"    pm.expect(jsonData.data).to.have.property('referenceNumber');",
+									"    pm.expect(jsonData.data.status).to.eql('SUCCESS');",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.transactionId) {",
+									"    pm.collectionVariables.set('transaction_id', jsonData.data.transactionId);",
+									"    console.log('Transaction ID saved: ' + jsonData.data.transactionId);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Idempotency-Key",
+								"value": "{{idempotency_key}}",
+								"description": "Auto-generated UUID. Required for transfer requests."
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sourceAccountId\": \"{{source_account_id}}\",\n    \"destinationAccountNumber\": \"9876543210\",\n    \"destinationBankCode\": \"BCA\",\n    \"amount\": 100000,\n    \"currency\": \"IDR\",\n    \"remark\": \"Invoice Payment\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/transfers",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "transfers"]
+						},
+						"description": "Transfer funds from source to destination account.\n\n**Idempotency**: Uses auto-generated UUID as Idempotency-Key. Sending the same key+payload returns the cached response.\n\n**Fee**: 2500 IDR for inter-bank, 0 for same-bank transfers.\n\n**Auto-saves** the `transactionId` to collection variables."
+					},
+					"response": []
+				},
+				{
+					"name": "Transfer Funds (Idempotency Test - Same Key)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 (cached response)', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Returns same response (idempotent)', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data.status).to.eql('SUCCESS');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Idempotency-Key",
+								"value": "test-idempotency-key-001",
+								"description": "Fixed key to test idempotency"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sourceAccountId\": \"{{source_account_id}}\",\n    \"destinationAccountNumber\": \"9876543210\",\n    \"destinationBankCode\": \"BCA\",\n    \"amount\": 50000,\n    \"currency\": \"IDR\",\n    \"remark\": \"Idempotency Test\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/transfers",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "transfers"]
+						},
+						"description": "Test idempotency: Send the same request with the same Idempotency-Key.\n\n**First call**: Processes transfer and caches response.\n**Second call**: Returns cached response without processing again."
+					},
+					"response": []
+				},
+				{
+					"name": "Transfer Funds (Idempotency Conflict - Same Key, Diff Payload)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 409 (Conflict)', function () {",
+									"    pm.response.to.have.status(409);",
+									"});",
+									"",
+									"pm.test('Error code is IDEMPOTENCY_CONFLICT', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.false;",
+									"    pm.expect(jsonData.errorCode).to.eql('IDEMPOTENCY_CONFLICT');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Idempotency-Key",
+								"value": "test-idempotency-key-001",
+								"description": "Same key as previous, but different payload"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sourceAccountId\": \"{{source_account_id}}\",\n    \"destinationAccountNumber\": \"9876543210\",\n    \"destinationBankCode\": \"BCA\",\n    \"amount\": 999999,\n    \"currency\": \"IDR\",\n    \"remark\": \"DIFFERENT PAYLOAD - should conflict\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/transfers",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "transfers"]
+						},
+						"description": "Test idempotency conflict: Same Idempotency-Key but different request payload.\n\nShould return **409 Conflict** with `IDEMPOTENCY_CONFLICT` error code."
+					},
+					"response": []
+				},
+				{
+					"name": "Transfer Funds (Missing Idempotency Key - Should Fail)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Error about missing Idempotency-Key', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.false;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sourceAccountId\": \"{{source_account_id}}\",\n    \"destinationAccountNumber\": \"9876543210\",\n    \"destinationBankCode\": \"BCA\",\n    \"amount\": 100000,\n    \"currency\": \"IDR\",\n    \"remark\": \"No idempotency key\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/transfers",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "transfers"]
+						},
+						"description": "Test that Idempotency-Key header is mandatory. Should return 400."
+					},
+					"response": []
+				},
+				{
+					"name": "Transfer Funds (Insufficient Balance - Should Fail)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.variables.set('idempotency_key', pm.variables.replaceIn('{{$guid}}'));"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 422', function () {",
+									"    pm.response.to.have.status(422);",
+									"});",
+									"",
+									"pm.test('Error code is INSUFFICIENT_BALANCE', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.false;",
+									"    pm.expect(jsonData.errorCode).to.eql('INSUFFICIENT_BALANCE');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Idempotency-Key",
+								"value": "{{idempotency_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sourceAccountId\": \"{{source_account_id}}\",\n    \"destinationAccountNumber\": \"9876543210\",\n    \"destinationBankCode\": \"BCA\",\n    \"amount\": 999999999999,\n    \"currency\": \"IDR\",\n    \"remark\": \"Should fail - insufficient balance\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/transfers",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "transfers"]
+						},
+						"description": "Test insufficient balance validation. Should return 422."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Mutation Service",
+			"item": [
+				{
+					"name": "Check Mutations",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has pagination data', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.have.property('page');",
+									"    pm.expect(jsonData.data).to.have.property('size');",
+									"    pm.expect(jsonData.data).to.have.property('total');",
+									"    pm.expect(jsonData.data).to.have.property('records');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/accounts/{{source_account_id}}/mutations?fromDate=2026-01-01&toDate=2026-12-31&page=1&size=20&transactionType=ALL",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "accounts", "{{source_account_id}}", "mutations"],
+							"query": [
+								{
+									"key": "fromDate",
+									"value": "2026-01-01",
+									"description": "Start date (YYYY-MM-DD) - Required"
+								},
+								{
+									"key": "toDate",
+									"value": "2026-12-31",
+									"description": "End date (YYYY-MM-DD) - Required"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (optional, default: 1)"
+								},
+								{
+									"key": "size",
+									"value": "20",
+									"description": "Page size (optional, default: 20, max: 100)"
+								},
+								{
+									"key": "transactionType",
+									"value": "ALL",
+									"description": "Filter: ALL, CREDIT, DEBIT, TRANSFER_IN, TRANSFER_OUT (optional)"
+								}
+							]
+						},
+						"description": "Retrieve account mutations (transaction history) with filters and pagination.\n\n**Required query params**:\n- `fromDate` - Start date (YYYY-MM-DD)\n- `toDate` - End date (YYYY-MM-DD)\n\n**Optional query params**:\n- `page` - Page number (default: 1)\n- `size` - Page size (default: 20, max: 100)\n- `transactionType` - ALL, CREDIT, DEBIT, TRANSFER_IN, TRANSFER_OUT"
+					},
+					"response": []
+				},
+				{
+					"name": "Check Mutations (TRANSFER_OUT only)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('All records are TRANSFER_OUT type', function () {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data.records && jsonData.data.records.length > 0) {",
+									"        jsonData.data.records.forEach(function(record) {",
+									"            pm.expect(record.type).to.eql('TRANSFER_OUT');",
+									"        });",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/accounts/{{source_account_id}}/mutations?fromDate=2026-01-01&toDate=2026-12-31&transactionType=TRANSFER_OUT",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "accounts", "{{source_account_id}}", "mutations"],
+							"query": [
+								{
+									"key": "fromDate",
+									"value": "2026-01-01"
+								},
+								{
+									"key": "toDate",
+									"value": "2026-12-31"
+								},
+								{
+									"key": "transactionType",
+									"value": "TRANSFER_OUT"
+								}
+							]
+						},
+						"description": "Filter mutations by TRANSFER_OUT type only."
+					},
+					"response": []
+				},
+				{
+					"name": "Check Mutations (TRANSFER_IN - Destination)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/accounts/{{destination_account_id}}/mutations?fromDate=2026-01-01&toDate=2026-12-31&transactionType=TRANSFER_IN",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "accounts", "{{destination_account_id}}", "mutations"],
+							"query": [
+								{
+									"key": "fromDate",
+									"value": "2026-01-01"
+								},
+								{
+									"key": "toDate",
+									"value": "2026-12-31"
+								},
+								{
+									"key": "transactionType",
+									"value": "TRANSFER_IN"
+								}
+							]
+						},
+						"description": "Check incoming transfers on the destination account."
+					},
+					"response": []
+				},
+				{
+					"name": "Check Mutations (Missing Dates - Should Fail)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/accounts/{{source_account_id}}/mutations",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "accounts", "{{source_account_id}}", "mutations"]
+						},
+						"description": "Test missing required fromDate/toDate params. Should return 400."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Authentication Tests",
+			"item": [
+				{
+					"name": "No Auth Token - Should Fail 401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 401', function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test('Error code is UNAUTHORIZED', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.false;",
+									"    pm.expect(jsonData.errorCode).to.eql('UNAUTHORIZED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/accounts/{{source_account_id}}/balance",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "accounts", "{{source_account_id}}", "balance"]
+						},
+						"description": "Test request without JWT token. Should return 401 Unauthorized."
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid API Key - Should Fail 403",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 403', function () {",
+									"    pm.response.to.have.status(403);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "invalid-api-key-12345"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/accounts/{{source_account_id}}/balance",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "accounts", "{{source_account_id}}", "balance"]
+						},
+						"description": "Test request with invalid API key. Should return 403 Forbidden."
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid JWT Token - Should Fail 401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 401', function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "invalid.jwt.token",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/accounts/{{source_account_id}}/balance",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "accounts", "{{source_account_id}}", "balance"]
+						},
+						"description": "Test request with invalid JWT token. Should return 401 Unauthorized."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "HMAC Signature (Optional)",
+			"item": [
+				{
+					"name": "Request With Signature",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// HMAC Signature calculation",
+									"// Signature = HMAC_SHA256(secretKey, METHOD + PATH + BODY + TIMESTAMP)",
+									"",
+									"var timestamp = Math.floor(Date.now() / 1000).toString();",
+									"var method = 'GET';",
+									"var path = '/v1/accounts/' + pm.collectionVariables.get('source_account_id') + '/balance';",
+									"var body = '';",
+									"",
+									"var message = method + path + body + timestamp;",
+									"",
+									"// Use your HMAC secret key (JWT_SECRET_KEY as fallback)",
+									"var secretKey = '8acec2cc4727abce77202b2746ea9f2a04db60ca889d81ed07c34c1e65c61a81';",
+									"",
+									"var signature = CryptoJS.HmacSHA256(message, secretKey).toString(CryptoJS.enc.Hex);",
+									"",
+									"pm.variables.set('x_timestamp', timestamp);",
+									"pm.variables.set('x_signature', signature);",
+									"",
+									"console.log('Timestamp: ' + timestamp);",
+									"console.log('Message: ' + message);",
+									"console.log('Signature: ' + signature);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "X-Signature",
+								"value": "{{x_signature}}",
+								"description": "Auto-calculated HMAC SHA256 signature"
+							},
+							{
+								"key": "X-Timestamp",
+								"value": "{{x_timestamp}}",
+								"description": "Auto-calculated unix timestamp"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/accounts/{{source_account_id}}/balance",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "accounts", "{{source_account_id}}", "balance"]
+						},
+						"description": "Test request with HMAC SHA256 signature.\n\nThe pre-request script automatically calculates:\n- `X-Timestamp`: Current unix timestamp\n- `X-Signature`: HMAC_SHA256(secretKey, METHOD + PATH + BODY + TIMESTAMP)\n\n⚠️ Update the `secretKey` in the pre-request script to match your `HMAC_SECRET_KEY` or `JWT_SECRET_KEY`."
+					},
+					"response": []
+				},
+				{
+					"name": "Request With Invalid Signature - Should Fail",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 401', function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test('Error code is INVALID_SIGNATURE', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errorCode).to.eql('INVALID_SIGNATURE');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "X-Signature",
+								"value": "invalidsignature1234567890abcdef",
+								"description": "Invalid signature"
+							},
+							{
+								"key": "X-Timestamp",
+								"value": "{{$timestamp}}",
+								"description": "Current timestamp"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/accounts/{{source_account_id}}/balance",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "accounts", "{{source_account_id}}", "balance"]
+						},
+						"description": "Test with invalid HMAC signature. Should return 401."
+					},
+					"response": []
+				},
+				{
+					"name": "Request With Expired Timestamp - Should Fail",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 401', function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test('Error about expired timestamp', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errorCode).to.eql('TIMESTAMP_EXPIRED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "X-Signature",
+								"value": "somesignature",
+								"description": "Any signature"
+							},
+							{
+								"key": "X-Timestamp",
+								"value": "1000000000",
+								"description": "Expired timestamp (year 2001)"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/accounts/{{source_account_id}}/balance",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "accounts", "{{source_account_id}}", "balance"]
+						},
+						"description": "Test replay attack protection with expired timestamp (>5 min). Should return 401."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Legacy Endpoints",
+			"item": [
+				{
+					"name": "[Legacy] Transfer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "service-caller-name",
+								"value": "supernova-in"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"from_account\": \"00369400001\",\n    \"to_account\": \"90369400001\",\n    \"amount\": 10000\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/transfer",
+							"host": ["{{base_url}}"],
+							"path": ["transfer"]
+						},
+						"description": "Legacy transfer endpoint. Requires `service-caller-name: supernova-in` header."
+					},
+					"response": []
+				},
+				{
+					"name": "[Legacy] Check Balance",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "service-caller-name",
+								"value": "supernova-in"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"transaction_id\": \"<transaction_uuid>\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/balance",
+							"host": ["{{base_url}}"],
+							"path": ["balance"]
+						},
+						"description": "Legacy balance check endpoint."
+					},
+					"response": []
+				},
+				{
+					"name": "[Legacy] Transaction History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "service-caller-name",
+								"value": "supernova-in"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/transaction-history?source_account=00369400001&filter_days=30",
+							"host": ["{{base_url}}"],
+							"path": ["transaction-history"],
+							"query": [
+								{
+									"key": "source_account",
+									"value": "00369400001"
+								},
+								{
+									"key": "filter_days",
+									"value": "30"
+								}
+							]
+						},
+						"description": "Legacy transaction history endpoint."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
