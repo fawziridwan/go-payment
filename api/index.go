@@ -1,4 +1,4 @@
-package handler
+package main
 
 import (
 	"context"
@@ -63,3 +63,5 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	router.ServeHTTP(w, r)
 }
+
+func main() {}
