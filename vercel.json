@@ -7,7 +7,7 @@
     }
   ],
   "functions": {
-    "cmd/main.go": {
+    "main.go": {
       "memory": 1024,
       "maxDuration": 15
     }
