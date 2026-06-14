@@ -3,11 +3,12 @@
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/api/index.go"
+      "destination": "/cmd/main.go"
     }
   ],
   "functions": {
-    "api/index.go": {
+    "cmd/main.go": {
+      "runtime": "@vercel/go",
       "memory": 1024,
       "maxDuration": 15
     }
