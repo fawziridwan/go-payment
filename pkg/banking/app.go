@@ -1,12 +1,20 @@
 package banking
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
+)
+
+var (
+	DB     *sql.DB
+	Once   sync.Once
+	Router http.Handler
 )
 
 // NewAppRouter initializes the entire application router and handlers
