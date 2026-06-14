@@ -1,3 +1,13 @@
 package handler
 
-// This file is intentionally left empty to resolve conflicts with index.go
+import (
+	"database/sql"
+	"net/http"
+	"sync"
+)
+
+var (
+	db     *sql.DB
+	once   sync.Once
+	router http.Handler
+)
