@@ -1,8 +1,15 @@
 {
-  "buildCommand": "go mod download && go build -o payment ./cmd",
-  "outputDirectory": ".",
-  "framework": "go",
-  "env": {
-    "PORT": "8080"
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api/index.go"
+    }
+  ],
+  "functions": {
+    "api/index.go": {
+      "memory": 1024,
+      "maxDuration": 15
+    }
   }
 }
