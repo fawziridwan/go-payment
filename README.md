@@ -3,6 +3,7 @@
 A Go microservice for account transfers and transaction management using PostgreSQL.
 
 ## Features
+
 - `POST /transfer` - Transfer funds between accounts with validation
 - `POST /balance` - Check balance after a transaction
 - `GET /transaction-history` - Retrieve transaction history with date-range filtering
@@ -13,6 +14,7 @@ A Go microservice for account transfers and transaction management using Postgre
 ## Request Examples
 
 ### POST /transfer
+
 Transfer funds between accounts. Both account numbers must have prefix 003694 or 903694.
 
 ```json
@@ -24,6 +26,7 @@ Transfer funds between accounts. Both account numbers must have prefix 003694 or
 ```
 
 **Response:**
+
 ```json
 {
   "transaction_id": "uuid-string",
@@ -32,6 +35,7 @@ Transfer funds between accounts. Both account numbers must have prefix 003694 or
 ```
 
 ### POST /balance
+
 Check balance after a transaction.
 
 ```json
@@ -41,6 +45,7 @@ Check balance after a transaction.
 ```
 
 **Response:**
+
 ```json
 {
   "balance": 950000000,
@@ -52,9 +57,11 @@ Check balance after a transaction.
 ```
 
 ### GET /transaction-history
+
 Retrieve transaction history with optional date-range filtering.
 
 **Query Parameters:**
+
 - `source_account` (required): Account number (e.g., "00369400001")
 - `filter_days` (optional): Filter range - 7, 30, or 90 days (default: 30)
 
@@ -63,6 +70,7 @@ GET /transaction-history?source_account=00369400001&filter_days=7
 ```
 
 **Response:**
+
 ```json
 {
   "transactions": [
@@ -89,12 +97,13 @@ go mod download
 export DATABASE_URL="postgres://user:password@localhost:5432/payment"
 
 # Run the application
-go run ./cmd/payment
+go run ./cmd/main.go
 ```
 
 ## Deploy to Vercel
 
 ### Prerequisites
+
 1. PostgreSQL database (e.g., AWS RDS, Neon, Supabase, or similar)
 2. Vercel account
 3. Git repository with this code
@@ -102,14 +111,15 @@ go run ./cmd/payment
 ### Deployment Steps
 
 1. **Create `vercel.json` in the root directory:**
+
 ```json
 {
-  "buildCommand": "go mod download && go build -o payment ./cmd/payment",
+  "buildCommand": "go mod download && go build -o payment ./cmd",
   "outputDirectory": ".",
   "publicSource": "./",
   "framework": "go",
   "functions": {
-    "cmd/payment/**": {
+    "cmd/**": {
       "memory": 1024,
       "maxDuration": 30
     }
@@ -123,6 +133,7 @@ go run ./cmd/payment
    - Add `PORT` (optional, defaults to 8080)
 
 3. **Deploy:**
+
 ```bash
 # Using Vercel CLI
 vercel
@@ -132,6 +143,7 @@ git push origin main
 ```
 
 ### Example PostgreSQL Providers
+
 - **Neon**: https://neon.tech (Free tier available)
 - **Supabase**: https://supabase.com (PostgreSQL included)
 - **AWS RDS**: https://aws.amazon.com/rds/postgresql/
@@ -146,6 +158,7 @@ git push origin main
 ## Database
 
 The service uses PostgreSQL with the following tables:
+
 - `accounts` - Account information with account numbers and balances
 - `transactions` - Transaction records with UUID, amounts, and timestamps
 
@@ -178,7 +191,7 @@ CREATE INDEX idx_transactions_from_account_id ON transactions(from_account_id);
 CREATE INDEX idx_transactions_to_account_id ON transactions(to_account_id);
 CREATE INDEX idx_transactions_uuid ON transactions(uuid);
 
-INSERT INTO accounts (account_number, balance) VALUES 
+INSERT INTO accounts (account_number, balance) VALUES
     ('00369400001', 1000000000),
     ('90369400001', 500000000),
     ('00369400002', 0);

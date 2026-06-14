@@ -1,7 +1,6 @@
 {
-  "buildCommand": "go mod download && go build -o payment ./cmd/payment",
+  "buildCommand": "go mod download && go build -o payment ./cmd",
   "outputDirectory": ".",
-  "publicSource": "./",
   "framework": "go",
   "env": {
     "PORT": "8080"
