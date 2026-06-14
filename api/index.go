@@ -6,10 +6,17 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/example/go-payment/pkg/banking"
 	_ "github.com/lib/pq"
+)
+
+var (
+	db     *sql.DB
+	once   sync.Once
+	router http.Handler
 )
 
 func Handler(w http.ResponseWriter, r *http.Request) {

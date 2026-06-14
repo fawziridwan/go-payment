@@ -1,13 +1,4 @@
+//go:build ignore
 package handler
 
-import (
-	"database/sql"
-	"net/http"
-	"sync"
-)
-
-var (
-	db     *sql.DB
-	once   sync.Once
-	router http.Handler
-)
+// This file is ignored by the Go compiler and Vercel builder.
