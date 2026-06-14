@@ -3,13 +3,7 @@
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/main.go"
+      "destination": "/api/main.go"
     }
-  ],
-  "functions": {
-    "main.go": {
-      "memory": 1024,
-      "maxDuration": 15
-    }
-  }
+  ]
 }

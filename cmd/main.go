@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/example/go-payment/internal/banking"
+	"github.com/example/go-payment/pkg/banking"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
