@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/api/main.go"
+      "destination": "/api/index.go"
     }
   ]
 }

@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/example/go-payment/internal/banking"
+	"github.com/example/go-payment/pkg/banking"
 	_ "github.com/lib/pq"
 )
 
@@ -45,7 +45,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("failed to connect to database: %v", err)
 		}
 
-		// Run migrations (Optional: In production you might want to run this elsewhere)
+		// Run migrations if enabled
 		if os.Getenv("RUN_MIGRATIONS") == "true" {
 			if err := banking.RunMigrations(ctx, db); err != nil {
 				log.Printf("failed to run migrations: %v", err)
@@ -63,5 +63,3 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	router.ServeHTTP(w, r)
 }
-
-func main() {}

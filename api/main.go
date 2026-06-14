@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"context"
@@ -63,6 +63,3 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	router.ServeHTTP(w, r)
 }
-
-// Global main for Vercel's Go runtime
-func main() {}
