@@ -233,7 +233,7 @@ func SignatureMiddleware(secretKey string) func(http.Handler) http.Handler {
 				return
 			}
 
-			// Store body in context for downstream use
+			// Store body in context to avoid reading again
 			ctx := context.WithValue(r.Context(), ContextKeyRequestBody, bodyBytes)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -248,9 +248,9 @@ func SignatureMiddleware(secretKey string) func(http.Handler) http.Handler {
 func AuditMiddleware(repo *Repository) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Read request body
-			var bodyBytes []byte
-			if r.Body != nil {
+			// Get body from context or read it if not available
+			bodyBytes, ok := r.Context().Value(ContextKeyRequestBody).([]byte)
+			if !ok && r.Body != nil {
 				bodyBytes, _ = io.ReadAll(r.Body)
 				r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 			}
@@ -312,49 +312,58 @@ func (rr *responseRecorder) Write(b []byte) (int, error) {
 // Rate Limiting Middleware
 // ============================================
 
-// RateLimiter implements a simple in-memory rate limiter
+// RateLimiter implements a more efficient bucket-based rate limiter
 type RateLimiter struct {
-	mu       sync.Mutex
-	requests map[string][]time.Time
+	mu       sync.RWMutex
+	requests map[string]*bucket
 	limit    int
 	window   time.Duration
+}
+
+type bucket struct {
+	count      int
+	lastUpdate time.Time
 }
 
 // NewRateLimiter creates a rate limiter with specified requests per window
 func NewRateLimiter(limit int, window time.Duration) *RateLimiter {
 	return &RateLimiter{
-		requests: make(map[string][]time.Time),
+		requests: make(map[string]*bucket),
 		limit:    limit,
 		window:   window,
 	}
 }
 
-// RateLimitMiddleware applies rate limiting per client IP
+// RateLimitMiddleware applies rate limiting using a token bucket/sliding window approximation
 func RateLimitMiddleware(limiter *RateLimiter) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			clientIP := getClientIP(r)
+			now := time.Now()
 
 			limiter.mu.Lock()
-			now := time.Now()
-			windowStart := now.Add(-limiter.window)
-
-			// Clean old entries
-			var validRequests []time.Time
-			for _, t := range limiter.requests[clientIP] {
-				if t.After(windowStart) {
-					validRequests = append(validRequests, t)
+			b, ok := limiter.requests[clientIP]
+			if !ok {
+				b = &bucket{
+					count:      0,
+					lastUpdate: now,
 				}
+				limiter.requests[clientIP] = b
 			}
-			limiter.requests[clientIP] = validRequests
 
-			if len(validRequests) >= limiter.limit {
+			// If window has passed, reset count
+			if now.Sub(b.lastUpdate) > limiter.window {
+				b.count = 0
+				b.lastUpdate = now
+			}
+
+			if b.count >= limiter.limit {
 				limiter.mu.Unlock()
 				writeErrorResponse(w, r, 429, ErrRateLimitExceeded, "Rate limit exceeded")
 				return
 			}
 
-			limiter.requests[clientIP] = append(limiter.requests[clientIP], now)
+			b.count++
 			limiter.mu.Unlock()
 
 			next.ServeHTTP(w, r)

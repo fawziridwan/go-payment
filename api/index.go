@@ -27,6 +27,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// Configure pool for serverless environment
+		banking.DB.SetMaxOpenConns(10)
+		banking.DB.SetMaxIdleConns(5)
+		banking.DB.SetConnMaxLifetime(time.Minute * 5)
+
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		

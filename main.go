@@ -29,10 +29,11 @@ func main() {
 	}
 	defer db.Close()
 
-	// 2. Database Connection Check & Config
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(5)
+	// 2. Database Connection Check & Config (Optimized for performance)
+	db.SetMaxOpenConns(50)
+	db.SetMaxIdleConns(25)
 	db.SetConnMaxLifetime(time.Minute * 5)
+	db.SetConnMaxIdleTime(time.Minute * 2)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

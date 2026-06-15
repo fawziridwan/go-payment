@@ -160,6 +160,30 @@ func (r *Repository) GetBalance(ctx context.Context, accountID string) (*Balance
 	return &b, nil
 }
 
+// GetAccountWithBalance retrieves both account and balance in a single query
+func (r *Repository) GetAccountWithBalance(ctx context.Context, accountID string) (*Account, *Balance, error) {
+	var a Account
+	var b Balance
+	err := r.db.QueryRowContext(ctx, `
+		SELECT a.id, a.account_number, a.account_name, a.bank_code, a.currency, a.status, a.created_at, a.updated_at, a.deleted_at,
+		       b.id, b.available_balance, b.ledger_balance, b.updated_at
+		FROM banking_accounts a
+		JOIN balances b ON a.id = b.account_id
+		WHERE a.id = $1 AND a.deleted_at IS NULL
+	`, accountID).Scan(
+		&a.ID, &a.AccountNumber, &a.AccountName, &a.BankCode, &a.Currency, &a.Status, &a.CreatedAt, &a.UpdatedAt, &a.DeletedAt,
+		&b.ID, &b.AvailableBalance, &b.LedgerBalance, &b.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil, ErrAccountNotFound
+		}
+		return nil, nil, fmt.Errorf("%w: %v", ErrInternalError, err)
+	}
+	b.AccountID = a.ID
+	return &a, &b, nil
+}
+
 // GetBalanceForUpdate locks the balance row for update within a transaction
 func (r *Repository) GetBalanceForUpdate(ctx context.Context, tx *sql.Tx, accountID string) (*Balance, error) {
 	var b Balance
@@ -261,58 +285,40 @@ func (r *Repository) CreateMutation(ctx context.Context, tx *sql.Tx, m Mutation)
 	return nil
 }
 
-// GetMutations retrieves mutations for an account with filters and pagination
+// GetMutations retrieves mutations for an account with filters and pagination using a single query
 func (r *Repository) GetMutations(ctx context.Context, accountID string, fromDate, toDate time.Time, txnType string, page, size int) ([]MutationRecord, int, error) {
-	// Count total
-	countQuery := `
-		SELECT COUNT(*)
-		FROM mutations
-		WHERE account_id = $1 AND created_at >= $2 AND created_at <= $3
+	offset := (page - 1) * size
+	
+	// Base query with window function for total count
+	query := `
+		SELECT m.transaction_id, m.type, m.amount, m.balance_after, m.description, m.created_at,
+		       COUNT(*) OVER() as total_count
+		FROM mutations m
+		WHERE m.account_id = $1 AND m.created_at >= $2 AND m.created_at <= $3
 	`
 	args := []interface{}{accountID, fromDate, toDate}
 	argIdx := 4
 
 	if txnType != "" && txnType != "ALL" {
-		countQuery += fmt.Sprintf(" AND type = $%d", argIdx)
+		query += fmt.Sprintf(" AND m.type = $%d", argIdx)
 		args = append(args, txnType)
 		argIdx++
 	}
 
-	var total int
-	err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&total)
-	if err != nil {
-		return nil, 0, fmt.Errorf("%w: %v", ErrInternalError, err)
-	}
+	query += fmt.Sprintf(" ORDER BY m.created_at DESC LIMIT $%d OFFSET $%d", argIdx, argIdx+1)
+	args = append(args, size, offset)
 
-	// Get records
-	dataQuery := `
-		SELECT m.transaction_id, m.type, m.amount, m.balance_after, m.description, m.created_at
-		FROM mutations m
-		WHERE m.account_id = $1 AND m.created_at >= $2 AND m.created_at <= $3
-	`
-	dataArgs := []interface{}{accountID, fromDate, toDate}
-	dataIdx := 4
-
-	if txnType != "" && txnType != "ALL" {
-		dataQuery += fmt.Sprintf(" AND m.type = $%d", dataIdx)
-		dataArgs = append(dataArgs, txnType)
-		dataIdx++
-	}
-
-	offset := (page - 1) * size
-	dataQuery += fmt.Sprintf(" ORDER BY m.created_at DESC LIMIT $%d OFFSET $%d", dataIdx, dataIdx+1)
-	dataArgs = append(dataArgs, size, offset)
-
-	rows, err := r.db.QueryContext(ctx, dataQuery, dataArgs...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("%w: %v", ErrInternalError, err)
 	}
 	defer rows.Close()
 
 	var records []MutationRecord
+	total := 0
 	for rows.Next() {
 		var rec MutationRecord
-		if err := rows.Scan(&rec.TransactionID, &rec.Type, &rec.Amount, &rec.BalanceAfter, &rec.Description, &rec.CreatedAt); err != nil {
+		if err := rows.Scan(&rec.TransactionID, &rec.Type, &rec.Amount, &rec.BalanceAfter, &rec.Description, &rec.CreatedAt, &total); err != nil {
 			return nil, 0, fmt.Errorf("%w: %v", ErrInternalError, err)
 		}
 		records = append(records, rec)
