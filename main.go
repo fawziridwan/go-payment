@@ -3,13 +3,12 @@ package main
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/example/go-payment/internal/banking"
+	"github.com/example/go-payment/pkg/banking"
 	_ "github.com/lib/pq"
 )
 
