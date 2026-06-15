@@ -86,5 +86,16 @@ func NewAppRouter(repo *Repository) *chi.Mux {
 		})
 	})
 
+	// Root endpoint
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Welcome to the Banking Transaction API",
+			"version": "1.0",
+			"health":  "/health",
+		})
+	})
+
 	return r
 }
